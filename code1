@@ -1,0 +1,49 @@
+import pymonetdb
+
+# Connection details for database_one and database_two
+db1_connection_details = {
+    "hostname": "localhost",
+    "port": 50000,   # Default MonetDB port
+    "username": "monetdb",
+    "password": "monetdb",
+    "database": "database_one"
+}
+
+db2_connection_details = {
+    "hostname": "localhost",
+    "port": 50000,
+    "username": "monetdb",
+    "password": "monetdb",
+    "database": "database_two"
+}
+
+# Connect to database_one
+conn_db1 = pymonetdb.connect(**db1_connection_details)
+cur_db1 = conn_db1.cursor()
+
+# Connect to database_two
+conn_db2 = pymonetdb.connect(**db2_connection_details)
+cur_db2 = conn_db2.cursor()
+
+try:
+    # Query distinct category_key from class_previous_load in database_two
+    cur_db2.execute("SELECT DISTINCT category_key FROM class_previous_load")
+    previous_keys = {row[0] for row in cur_db2.fetchall()}  # Use a set for faster lookup
+
+    # Query distinct category_key from class_current_load in database_one
+    cur_db1.execute("SELECT DISTINCT category_key FROM class_current_load")
+    current_keys = {row[0] for row in cur_db1.fetchall()}  # Use a set for faster lookup
+
+    # Find category_keys in current_keys that are NOT in previous_keys
+    result = current_keys - previous_keys
+
+    print("Category keys in 'class_current_load' NOT in 'class_previous_load':")
+    for key in result:
+        print(key)
+
+finally:
+    # Close both connections
+    cur_db1.close()
+    conn_db1.close()
+    cur_db2.close()
+    conn_db2.close()
